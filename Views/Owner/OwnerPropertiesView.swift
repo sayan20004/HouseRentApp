@@ -5,8 +5,11 @@
 //  Created by Sayan  Maity  on 22/11/25.
 //
 
+
+
 import SwiftUI
 import Combine
+
 @MainActor
 class OwnerPropertiesViewModel: ObservableObject {
     @Published var properties: [Property] = []
@@ -18,7 +21,7 @@ class OwnerPropertiesViewModel: ObservableObject {
             do {
                 properties = try await PropertyService.shared.fetchOwnerProperties()
             } catch {
-                print(error)
+                print("Error loading owner properties: \(error)")
             }
             isLoading = false
         }
@@ -27,11 +30,20 @@ class OwnerPropertiesViewModel: ObservableObject {
 
 struct OwnerPropertiesView: View {
     @StateObject private var viewModel = OwnerPropertiesViewModel()
+    @State private var showingAddProperty = false
     
     var body: some View {
         Group {
             if viewModel.isLoading {
                 LoadingView()
+            } else if viewModel.properties.isEmpty {
+                VStack {
+                    EmptyStateView(text: "You haven't posted any properties")
+                    Button("Add Property") {
+                        showingAddProperty = true
+                    }
+                    .padding()
+                }
             } else {
                 List(viewModel.properties) { property in
                     HStack {
@@ -44,11 +56,26 @@ struct OwnerPropertiesView: View {
                         }
                         Spacer()
                         Text("₹\(property.rent)")
+                            .fontWeight(.bold)
                     }
                 }
             }
         }
         .navigationTitle("My Properties")
+        .toolbar {
+            Button(action: { showingAddProperty = true }) {
+                Image(systemName: "plus")
+            }
+        }
+        .sheet(isPresented: $showingAddProperty) {
+            AddPropertyView()
+        }
         .onAppear { viewModel.load() }
+        .onChange(of: showingAddProperty) { isPresented in
+            // Reload list when AddPropertyView is dismissed to show the new property
+            if !isPresented {
+                viewModel.load()
+            }
+        }
     }
 }

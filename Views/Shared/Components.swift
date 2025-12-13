@@ -45,3 +45,19 @@ struct LoadingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
+struct EmptyStateView: View {
+    let text: String
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "list.bullet.clipboard")
+                .font(.system(size: 48))
+                .foregroundColor(.gray.opacity(0.5))
+            Text(text)
+                .font(.headline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBackground)
+    }
+}

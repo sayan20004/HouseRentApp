@@ -7,23 +7,6 @@
 
 import SwiftUI
 import Combine
-@MainActor
-class VisitsViewModel: ObservableObject {
-    @Published var visits: [VisitRequest] = []
-    @Published var isLoading = false
-    
-    func loadData(userRole: UserRole) {
-        isLoading = true
-        Task {
-            do {
-                visits = try await VisitService.shared.fetchMyVisits(role: userRole)
-            } catch {
-                print(error)
-            }
-            isLoading = false
-        }
-    }
-}
 
 struct VisitsListView: View {
     @EnvironmentObject var appState: AppState
@@ -40,8 +23,7 @@ struct VisitsListView: View {
                     List(viewModel.visits) { visit in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text(visit.property.title)
-                                    .font(.headline)
+                                Text(visit.property.title).font(.headline)
                                 Spacer()
                                 Text(visit.status.rawValue.capitalized)
                                     .font(.caption)
@@ -50,26 +32,42 @@ struct VisitsListView: View {
                                     .foregroundColor(visit.status.color)
                                     .cornerRadius(4)
                             }
-                            
-                            Text(formatDate(visit.preferredDateTime))
-                                .font(.subheadline)
-                            
+                            Text(formatDate(visit.preferredDateTime)).font(.subheadline)
                             if let notes = visit.notes, !notes.isEmpty {
-                                Text(notes)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
+                                Text(notes).font(.caption).foregroundColor(.secondary)
+                            }
+                            
+                            if appState.currentUser?.role == .owner && visit.status == .pending {
+                                HStack {
+                                    Button("Accept") {
+                                        updateStatus(id: visit.id, status: "accepted")
+                                    }.buttonStyle(.borderedProminent).tint(.green)
+                                    
+                                    Button("Reject") {
+                                        updateStatus(id: visit.id, status: "rejected")
+                                    }.buttonStyle(.bordered).tint(.red)
+                                }
+                                .padding(.top, 4)
                             }
                         }
                         .padding(.vertical, 4)
                     }
                 }
             }
-            .navigationTitle("My Visits")
+            .navigationTitle(appState.currentUser?.role == .owner ? "Visit Requests" : "My Visits")
             .onAppear {
                 if let role = appState.currentUser?.role {
                     viewModel.loadData(userRole: role)
                 }
+            }
+        }
+    }
+    
+    func updateStatus(id: String, status: String) {
+        Task {
+            try? await VisitService.shared.updateStatus(id: id, status: status)
+            if let role = appState.currentUser?.role {
+                viewModel.loadData(userRole: role)
             }
         }
     }
@@ -80,19 +78,5 @@ struct VisitsListView: View {
             return date.formatted(date: .abbreviated, time: .shortened)
         }
         return iso
-    }
-}
-
-struct EmptyStateView: View {
-    let text: String
-    var body: some View {
-        VStack {
-            Image(systemName: "list.bullet.clipboard")
-                .font(.largeTitle)
-                .foregroundColor(.gray)
-                .padding()
-            Text(text)
-                .foregroundColor(.secondary)
-        }
     }
 }

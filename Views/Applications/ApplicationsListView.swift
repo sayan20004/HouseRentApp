@@ -7,27 +7,10 @@
 
 import SwiftUI
 import Combine
-@MainActor
-class ApplicationsViewModel: ObservableObject {
-    @Published var applications: [RentalApplication] = []
-    @Published var isLoading = false
-    
-    func loadData(userRole: UserRole) {
-        isLoading = true
-        Task {
-            do {
-                applications = try await ApplicationService.shared.fetchMyApplications(role: userRole)
-            } catch {
-                print(error)
-            }
-            isLoading = false
-        }
-    }
-}
-
 struct ApplicationsListView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = ApplicationsViewModel()
+    
     
     var body: some View {
         NavigationStack {
@@ -40,8 +23,7 @@ struct ApplicationsListView: View {
                     List(viewModel.applications) { app in
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text(app.property.title)
-                                    .font(.headline)
+                                Text(app.property.title).font(.headline)
                                 Spacer()
                                 Text(app.status.rawValue.capitalized)
                                     .font(.caption)
@@ -50,17 +32,23 @@ struct ApplicationsListView: View {
                                     .foregroundColor(app.status.color)
                                     .cornerRadius(4)
                             }
-                            
                             if let offer = app.monthlyRentOffered {
-                                Text("Offered: ₹\(offer)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.appPrimary)
+                                Text("Offered: ₹\(offer)").font(.subheadline)
                             }
+                            Text(app.message).font(.caption).foregroundColor(.secondary)
                             
-                            Text(app.message)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
+                            if appState.currentUser?.role == .owner && app.status == .pending {
+                                HStack {
+                                    Button("Shortlist") {
+                                        updateStatus(id: app.id, status: "shortlisted")
+                                    }.buttonStyle(.borderedProminent)
+                                    
+                                    Button("Reject") {
+                                        updateStatus(id: app.id, status: "rejected")
+                                    }.buttonStyle(.bordered).tint(.red)
+                                }
+                                .padding(.top, 4)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
@@ -71,6 +59,15 @@ struct ApplicationsListView: View {
                 if let role = appState.currentUser?.role {
                     viewModel.loadData(userRole: role)
                 }
+            }
+        }
+    }
+    
+    func updateStatus(id: String, status: String) {
+        Task {
+            try? await ApplicationService.shared.updateStatus(id: id, status: status)
+            if let role = appState.currentUser?.role {
+                viewModel.loadData(userRole: role)
             }
         }
     }
