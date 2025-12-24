@@ -37,17 +37,26 @@ struct VisitsListView: View {
                                 Text(notes).font(.caption).foregroundColor(.secondary)
                             }
                             
-                            if appState.currentUser?.role == .owner && visit.status == .pending {
-                                HStack {
-                                    Button("Accept") {
-                                        updateStatus(id: visit.id, status: "accepted")
-                                    }.buttonStyle(.borderedProminent).tint(.green)
-                                    
-                                    Button("Reject") {
-                                        updateStatus(id: visit.id, status: "rejected")
-                                    }.buttonStyle(.bordered).tint(.red)
+                            if appState.currentUser?.role == .owner {
+                                if visit.status == .pending {
+                                    HStack {
+                                        Button("Accept") {
+                                            updateStatus(id: visit.id, status: "accepted")
+                                        }.buttonStyle(.borderedProminent).tint(.green)
+                                        
+                                        Button("Reject") {
+                                            updateStatus(id: visit.id, status: "rejected")
+                                        }.buttonStyle(.bordered).tint(.red)
+                                    }
+                                    .padding(.top, 4)
+                                } else if visit.status == .accepted {
+                                    Button("Mark as Completed") {
+                                        updateStatus(id: visit.id, status: "completed")
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(.blue)
+                                    .padding(.top, 4)
                                 }
-                                .padding(.top, 4)
                             }
                         }
                         .padding(.vertical, 4)

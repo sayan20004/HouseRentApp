@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+
 class AddPropertyViewModel: ObservableObject {
     @Published var title = ""
     @Published var description = ""
@@ -15,17 +16,32 @@ class AddPropertyViewModel: ObservableObject {
     @Published var furnishing = Furnishing.unfurnished
     @Published var rent = ""
     @Published var deposit = ""
+    
+    @Published var maintenanceAmount = ""
+    @Published var maintenanceIncluded = false
+    
     @Published var area = ""
     @Published var city = ""
     @Published var locationArea = ""
     @Published var pincode = ""
     @Published var allowedTenants = AllowedTenants.any
     @Published var availableDate = Date()
-    @Published var imageUrls = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688" // Default image for testing
+    @Published var imageUrls = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688"
+    
+    @Published var selectedAmenities: Set<String> = []
+    let availableAmenities = ["Wifi", "Parking", "Lift", "Gym", "Security", "Power Backup", "Swimming Pool", "Garden"]
     
     @Published var isSubmitting = false
     @Published var shouldDismiss = false
     @Published var errorMsg: String?
+    
+    func toggleAmenity(_ amenity: String) {
+        if selectedAmenities.contains(amenity) {
+            selectedAmenities.remove(amenity)
+        } else {
+            selectedAmenities.insert(amenity)
+        }
+    }
     
     func submit() {
         guard let rentInt = Int(rent),
@@ -35,7 +51,8 @@ class AddPropertyViewModel: ObservableObject {
             return
         }
         
-        // Basic validation
+        let maintenanceInt = Int(maintenanceAmount) ?? 0
+        
         if title.count < 10 { errorMsg = "Title must be at least 10 chars"; return }
         if description.count < 50 { errorMsg = "Description must be at least 50 chars"; return }
         if city.isEmpty || locationArea.isEmpty || pincode.count != 6 { errorMsg = "Please enter valid location details"; return }
@@ -43,6 +60,8 @@ class AddPropertyViewModel: ObservableObject {
         let images = imageUrls.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         
         let location = Location(city: city, area: locationArea, landmark: nil, pincode: pincode)
+        
+        let maintenance = MaintenanceInput(amount: maintenanceInt, included: maintenanceIncluded)
         
         let input = PropertyInput(
             title: title,
@@ -52,10 +71,11 @@ class AddPropertyViewModel: ObservableObject {
             furnishing: furnishing.rawValue,
             rent: rentInt,
             securityDeposit: depositInt,
+            maintenance: maintenance,
             builtUpArea: areaInt,
             availableFrom: ISO8601DateFormatter().string(from: availableDate),
             location: location,
-            amenities: ["Wifi", "Parking"], // Default amenities for now
+            amenities: Array(selectedAmenities),
             images: images,
             allowedTenants: allowedTenants.rawValue
         )
@@ -95,12 +115,35 @@ struct AddPropertyView: View {
                 Section(header: Text("Financials & Area")) {
                     TextField("Rent", text: $viewModel.rent).keyboardType(.numberPad)
                     TextField("Deposit", text: $viewModel.deposit).keyboardType(.numberPad)
+                    
+                    Toggle("Maintenance Included", isOn: $viewModel.maintenanceIncluded)
+                    if !viewModel.maintenanceIncluded {
+                        TextField("Maintenance Amount", text: $viewModel.maintenanceAmount).keyboardType(.numberPad)
+                    }
+                    
                     TextField("Area (sqft)", text: $viewModel.area).keyboardType(.numberPad)
                     Picker("Furnishing", selection: $viewModel.furnishing) {
                         ForEach(Furnishing.allCases) { type in
                             Text(type.displayName).tag(type)
                         }
                     }
+                }
+                
+                Section(header: Text("Amenities")) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 10) {
+                        ForEach(viewModel.availableAmenities, id: \.self) { amenity in
+                            Button(action: { viewModel.toggleAmenity(amenity) }) {
+                                Text(amenity)
+                                    .font(.caption)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 12)
+                                    .background(viewModel.selectedAmenities.contains(amenity) ? Color.blue : Color.gray.opacity(0.2))
+                                    .foregroundColor(viewModel.selectedAmenities.contains(amenity) ? .white : .primary)
+                                    .cornerRadius(20)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
                 }
                 
                 Section(header: Text("Location")) {

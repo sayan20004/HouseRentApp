@@ -14,6 +14,8 @@ struct PropertyFilter {
     var bhk: Int?
     var furnishing: String?
     var allowedTenants: String?
+    var propertyType: String?
+    var petsAllowed: Bool?
     var sort: String?
     
     func toQueryItems() -> [URLQueryItem] {
@@ -24,6 +26,8 @@ struct PropertyFilter {
         if let bhk = bhk { items.append(URLQueryItem(name: "bhk", value: String(bhk))) }
         if let furnishing = furnishing { items.append(URLQueryItem(name: "furnishing", value: furnishing)) }
         if let tenants = allowedTenants { items.append(URLQueryItem(name: "allowedTenants", value: tenants)) }
+        if let type = propertyType { items.append(URLQueryItem(name: "propertyType", value: type)) }
+        if let pets = petsAllowed, pets { items.append(URLQueryItem(name: "petsAllowed", value: "true")) }
         if let sort = sort { items.append(URLQueryItem(name: "sortBy", value: sort)) }
         return items
     }
@@ -49,9 +53,25 @@ class PropertyService {
         return response.data ?? []
     }
     
+    func deleteProperty(id: String) async throws {
+        let _: APIResponse<EmptyData> = try await NetworkManager.shared.request(
+            endpoint: "/properties/\(id)",
+            method: "DELETE"
+        )
+    }
+    
     func updatePropertyStatus(id: String, status: String) async throws {
         let body = ["status": status]
         let data = try JSONEncoder().encode(body)
         let _: APIResponse<Property> = try await NetworkManager.shared.request(endpoint: "/properties/\(id)", method: "PATCH", body: data)
+    }
+    
+    func createProperty(_ input: PropertyInput) async throws {
+        let data = try JSONEncoder().encode(input)
+        let _: APIResponse<Property> = try await NetworkManager.shared.request(
+            endpoint: "/properties",
+            method: "POST",
+            body: data
+        )
     }
 }

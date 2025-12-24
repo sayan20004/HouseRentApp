@@ -7,10 +7,10 @@
 
 import SwiftUI
 import Combine
+
 struct ApplicationsListView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = ApplicationsViewModel()
-    
     
     var body: some View {
         NavigationStack {
@@ -38,16 +38,22 @@ struct ApplicationsListView: View {
                             Text(app.message).font(.caption).foregroundColor(.secondary)
                             
                             if appState.currentUser?.role == .owner && app.status == .pending {
-                                HStack {
-                                    Button("Shortlist") {
-                                        updateStatus(id: app.id, status: "shortlisted")
-                                    }.buttonStyle(.borderedProminent)
-                                    
-                                    Button("Reject") {
-                                        updateStatus(id: app.id, status: "rejected")
-                                    }.buttonStyle(.bordered).tint(.red)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack {
+                                        Button("Accept") {
+                                            updateStatus(id: app.id, status: "accepted")
+                                        }.buttonStyle(.borderedProminent).tint(.green)
+                                        
+                                        Button("Shortlist") {
+                                            updateStatus(id: app.id, status: "shortlisted")
+                                        }.buttonStyle(.borderedProminent).tint(.blue)
+                                        
+                                        Button("Reject") {
+                                            updateStatus(id: app.id, status: "rejected")
+                                        }.buttonStyle(.bordered).tint(.red)
+                                    }
+                                    .padding(.top, 4)
                                 }
-                                .padding(.top, 4)
                             }
                         }
                         .padding(.vertical, 4)

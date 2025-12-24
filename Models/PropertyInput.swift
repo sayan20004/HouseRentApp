@@ -7,6 +7,11 @@
 
 import Foundation
 
+struct MaintenanceInput: Encodable {
+    let amount: Int
+    let included: Bool
+}
+
 struct PropertyInput: Encodable {
     let title: String
     let description: String
@@ -15,6 +20,7 @@ struct PropertyInput: Encodable {
     let furnishing: String
     let rent: Int
     let securityDeposit: Int
+    let maintenance: MaintenanceInput?
     let builtUpArea: Int
     let availableFrom: String
     let location: Location

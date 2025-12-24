@@ -1,10 +1,3 @@
-//
-//  PropertyCardView.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 22/11/25.
-//
-
 import SwiftUI
 
 struct PropertyCardView: View {
@@ -43,6 +36,7 @@ struct PropertyCardView: View {
                     Text("₹\(property.rent)/mo")
                         .font(.title3)
                         .fontWeight(.bold)
+                        .foregroundColor(.textPrimary)
                     Spacer()
                     Text("\(property.bhk) BHK • \(property.propertyType.displayName)")
                         .font(.subheadline)
@@ -52,6 +46,7 @@ struct PropertyCardView: View {
                 HStack {
                     Image(systemName: "mappin.and.ellipse")
                         .font(.caption)
+                        .foregroundColor(.textSecondary)
                     Text("\(property.location.area), \(property.location.city)")
                         .font(.subheadline)
                         .foregroundColor(.textSecondary)

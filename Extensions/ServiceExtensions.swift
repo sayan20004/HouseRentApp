@@ -7,24 +7,6 @@
 
 import Foundation
 
-extension PropertyService {
-    func createProperty(_ input: PropertyInput) async throws {
-        let data = try JSONEncoder().encode(input)
-        let _: APIResponse<Property> = try await NetworkManager.shared.request(
-            endpoint: "/properties",
-            method: "POST",
-            body: data
-        )
-    }
-    
-    func deleteProperty(id: String) async throws {
-        let _: APIResponse<EmptyData> = try await NetworkManager.shared.request(
-            endpoint: "/properties/\(id)",
-            method: "DELETE"
-        )
-    }
-}
-
 extension VisitService {
     func updateStatus(id: String, status: String) async throws {
         let body = ["status": status]

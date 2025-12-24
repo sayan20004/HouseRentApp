@@ -14,6 +14,7 @@ class PropertyDetailViewModel: ObservableObject {
     @Published var isSubmitting = false
     @Published var errorMsg: String?
     @Published var showSuccess = false
+    @Published var isFavorite = false
     
     init(property: Property) {
         self.property = property
@@ -42,6 +43,17 @@ class PropertyDetailViewModel: ObservableObject {
                 errorMsg = error.localizedDescription
             }
             isSubmitting = false
+        }
+    }
+    
+    func addToFavorites() {
+        Task {
+            do {
+                try await FavoriteService.shared.addFavorite(propertyId: property.id)
+                isFavorite = true
+            } catch {
+                print("Error adding favorite: \(error)")
+            }
         }
     }
 }

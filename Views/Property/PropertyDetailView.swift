@@ -1,10 +1,3 @@
-//
-//  PropertyDetailView.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 22/11/25.
-//
-
 import SwiftUI
 
 struct PropertyDetailView: View {
@@ -20,7 +13,6 @@ struct PropertyDetailView: View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Image Header
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .aspectRatio(16/9, contentMode: .fit)
@@ -29,15 +21,25 @@ struct PropertyDetailView: View {
                                 img.resizable().scaledToFill()
                             } placeholder: {
                                 Image(systemName: "house.fill")
+                                    .foregroundColor(.gray)
                             }
                         )
                         .clipped()
                     
                     VStack(alignment: .leading, spacing: 16) {
-                        // Title
-                        Text(viewModel.property.title)
-                            .font(.title2)
-                            .fontWeight(.bold)
+                        HStack {
+                            Text(viewModel.property.title)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.textPrimary)
+                            Spacer()
+                            
+                            Button(action: { viewModel.addToFavorites() }) {
+                                Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                                    .foregroundColor(viewModel.isFavorite ? .red : .gray)
+                                    .font(.title2)
+                            }
+                        }
                         
                         Text("\(viewModel.property.location.area), \(viewModel.property.location.city)")
                             .font(.body)
@@ -45,7 +47,6 @@ struct PropertyDetailView: View {
                         
                         Divider()
                         
-                        // Rent Box
                         HStack {
                             VStack(alignment: .leading) {
                                 Text("Rent")
@@ -54,6 +55,7 @@ struct PropertyDetailView: View {
                                 Text("₹\(viewModel.property.rent)")
                                     .font(.title3)
                                     .fontWeight(.bold)
+                                    .foregroundColor(.textPrimary)
                             }
                             Spacer()
                             VStack(alignment: .leading) {
@@ -62,13 +64,13 @@ struct PropertyDetailView: View {
                                     .foregroundColor(.textSecondary)
                                 Text("₹\(viewModel.property.securityDeposit)")
                                     .font(.headline)
+                                    .foregroundColor(.textPrimary)
                             }
                         }
                         .padding()
                         .background(Color.appBackground)
-                        .cornerRadius(8)
+                        .cornerRadius(12)
                         
-                        // Details Grid
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                             DetailItem(title: "BHK", value: "\(viewModel.property.bhk)")
                             DetailItem(title: "Type", value: viewModel.property.propertyType.displayName)
@@ -81,16 +83,19 @@ struct PropertyDetailView: View {
                         
                         Text("Amenities")
                             .font(.headline)
+                            .foregroundColor(.textPrimary)
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack {
                                 ForEach(viewModel.property.amenities, id: \.self) { amenity in
                                     Text(amenity)
                                         .font(.caption)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .fontWeight(.medium)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
                                         .background(Color.appBackground)
-                                        .cornerRadius(16)
+                                        .foregroundColor(.textPrimary)
+                                        .cornerRadius(20)
                                 }
                             }
                         }
@@ -99,43 +104,99 @@ struct PropertyDetailView: View {
                         
                         Text("About")
                             .font(.headline)
+                            .foregroundColor(.textPrimary)
                         Text(viewModel.property.description)
                             .font(.body)
                             .foregroundColor(.textSecondary)
+                            .lineSpacing(4)
                         
-                        Spacer(minLength: 80)
+                        Spacer(minLength: 120)
                     }
                     .padding()
                 }
             }
+            .background(Color.white)
             
-            // Bottom Action Bar
-            VStack {
+            VStack(spacing: 0) {
                 HStack(spacing: 16) {
                     Button(action: { showVisitSheet = true }) {
                         Text("Book Visit")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.appPrimary, lineWidth: 2))
+                            .fontWeight(.bold)
                             .foregroundColor(.appPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(.ultraThinMaterial)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.6), Color.white.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [.white.opacity(0.8), .white.opacity(0.2)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
                     }
                     
                     Button(action: { showApplicationSheet = true }) {
                         Text("Apply Now")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.appPrimary)
+                            .fontWeight(.bold)
                             .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                ZStack {
+                                    LinearGradient(
+                                        colors: [Color.appPrimary, Color.appPrimary.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.35), .clear],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                    .mask(RoundedRectangle(cornerRadius: 20))
+                                    .padding(.top, 1)
+                                }
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [.white.opacity(0.6), .white.opacity(0.1)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                            .shadow(color: Color.appPrimary.opacity(0.4), radius: 10, x: 0, y: 5)
                     }
                 }
-                .padding()
-                .background(Color.white.shadow(radius: 4, y: -2))
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .sheet(isPresented: $showVisitSheet) {
             BookVisitView(viewModel: viewModel)
         }
@@ -150,13 +211,18 @@ struct DetailItem: View {
     let value: String
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.textSecondary)
             Text(value)
                 .font(.subheadline)
-                .fontWeight(.medium)
+                .fontWeight(.semibold)
+                .foregroundColor(.textPrimary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.appBackground.opacity(0.5))
+        .cornerRadius(12)
     }
 }

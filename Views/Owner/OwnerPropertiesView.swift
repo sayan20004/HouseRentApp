@@ -26,6 +26,21 @@ class OwnerPropertiesViewModel: ObservableObject {
             isLoading = false
         }
     }
+    
+    func deleteProperty(at offsets: IndexSet) {
+        guard let index = offsets.first else { return }
+        let property = properties[index]
+        
+        Task {
+            do {
+                try await PropertyService.shared.deleteProperty(id: property.id)
+                self.properties.remove(at: index)
+            } catch {
+                print("Error deleting property: \(error)")
+                load()
+            }
+        }
+    }
 }
 
 struct OwnerPropertiesView: View {
@@ -45,19 +60,22 @@ struct OwnerPropertiesView: View {
                     .padding()
                 }
             } else {
-                List(viewModel.properties) { property in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(property.title)
-                                .font(.headline)
-                            Text(property.status.capitalized)
-                                .font(.caption)
-                                .foregroundColor(property.status == "active" ? .green : .orange)
+                List {
+                    ForEach(viewModel.properties) { property in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(property.title)
+                                    .font(.headline)
+                                Text(property.status.capitalized)
+                                    .font(.caption)
+                                    .foregroundColor(property.status == "active" ? .green : .orange)
+                            }
+                            Spacer()
+                            Text("₹\(property.rent)")
+                                .fontWeight(.bold)
                         }
-                        Spacer()
-                        Text("₹\(property.rent)")
-                            .fontWeight(.bold)
                     }
+                    .onDelete(perform: viewModel.deleteProperty)
                 }
             }
         }
@@ -72,7 +90,6 @@ struct OwnerPropertiesView: View {
         }
         .onAppear { viewModel.load() }
         .onChange(of: showingAddProperty) { isPresented in
-            // Reload list when AddPropertyView is dismissed to show the new property
             if !isPresented {
                 viewModel.load()
             }

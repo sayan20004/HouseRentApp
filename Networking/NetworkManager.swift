@@ -23,8 +23,7 @@ class NetworkManager {
     private init() {}
     
     func request<T: Codable>(endpoint: String, method: String = "GET", body: Data? = nil, queryItems: [URLQueryItem]? = nil) async throws -> T {
-        // Ensure APIConfig.baseURL is defined in your Config file.
-        // If not, replace APIConfig.baseURL with your actual string URL.
+        // Ensure this matches your Render URL exactly
         guard var urlComponents = URLComponents(string: "https://houserentapi.onrender.com/api/v1" + endpoint) else {
             throw NetworkError.invalidURL
         }
@@ -47,11 +46,17 @@ class NetworkManager {
             request.httpBody = body
         }
         
+        // Debug Print: Show what we are requesting
+        print("🌐 Request: \(method) \(url.absoluteString)")
+        
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknown
         }
+        
+        // Debug Print: Show status code
+        print("📡 Response Status: \(httpResponse.statusCode)")
         
         if httpResponse.statusCode == 401 {
             TokenManager.shared.clear()
@@ -60,6 +65,7 @@ class NetworkManager {
         
         if !(200...299).contains(httpResponse.statusCode) {
             if let errorResponse = try? JSONDecoder().decode(APIResponse<EmptyData>.self, from: data) {
+                print("❌ Server Error: \(errorResponse.message ?? "Unknown")")
                 throw NetworkError.serverError(errorResponse.message ?? "Server error")
             }
             throw NetworkError.serverError("Error code: \(httpResponse.statusCode)")
@@ -68,7 +74,11 @@ class NetworkManager {
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            print("Decoding error: \(error)")
+            // CRITICAL DEBUGGING: Print why decoding failed
+            print("❌ Decoding Error for \(T.self): \(error)")
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📦 Raw Response: \(responseString)")
+            }
             throw NetworkError.decodingError
         }
     }
