@@ -1,10 +1,3 @@
-//
-//  PropertyService.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 22/11/25.
-//
-
 import Foundation
 
 struct PropertyFilter {
@@ -66,12 +59,45 @@ class PropertyService {
         let _: APIResponse<Property> = try await NetworkManager.shared.request(endpoint: "/properties/\(id)", method: "PATCH", body: data)
     }
     
-    func createProperty(_ input: PropertyInput) async throws {
-        let data = try JSONEncoder().encode(input)
-        let _: APIResponse<Property> = try await NetworkManager.shared.request(
+    func createProperty(_ input: PropertyInput, imagesData: [Data]) async throws {
+        var params: [String: Any] = [
+            "title": input.title,
+            "description": input.description,
+            "propertyType": input.propertyType,
+            "bhk": input.bhk,
+            "furnishing": input.furnishing,
+            "rent": input.rent,
+            "securityDeposit": input.securityDeposit,
+            "builtUpArea": input.builtUpArea,
+            "availableFrom": input.availableFrom,
+            "allowedTenants": input.allowedTenants,
+            "amenities": input.amenities,
+            "maintenance": [
+                "amount": input.maintenance?.amount ?? 0,
+                "included": input.maintenance?.included ?? false
+            ]
+        ]
+        
+        var locationDict: [String: Any] = [
+            "city": input.location.city,
+            "area": input.location.area,
+            "pincode": input.location.pincode
+        ]
+        
+        if let geo = input.location.geo {
+            locationDict["geo"] = [
+                "lat": geo.lat,
+                "lng": geo.lng
+            ]
+        }
+        
+        params["location"] = locationDict
+
+        let _: APIResponse<Property> = try await NetworkManager.shared.upload(
             endpoint: "/properties",
             method: "POST",
-            body: data
+            parameters: params,
+            images: imagesData
         )
     }
 }

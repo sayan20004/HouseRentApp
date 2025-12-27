@@ -1,10 +1,3 @@
-//
-//  HouseRentClientApp.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 22/11/25.
-//
-
 import SwiftUI
 
 @main
@@ -32,6 +25,11 @@ struct MainTabView: View {
             HomeView()
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
+                }
+            
+            ChatListView()
+                .tabItem {
+                    Label("Messages", systemImage: "message.fill")
                 }
             
             VisitsListView()

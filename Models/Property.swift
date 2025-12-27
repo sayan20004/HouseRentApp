@@ -1,10 +1,3 @@
-//
-//  Property.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 22/11/25.
-//
-
 import Foundation
 
 enum PropertyType: String, Codable, CaseIterable, Identifiable {
@@ -44,11 +37,17 @@ enum AllowedTenants: String, Codable, CaseIterable, Identifiable {
     var displayName: String { rawValue.capitalized }
 }
 
+struct GeoLocation: Codable {
+    let lat: Double
+    let lng: Double
+}
+
 struct Location: Codable {
     let city: String
     let area: String
     let landmark: String?
     let pincode: String
+    let geo: GeoLocation?
 }
 
 struct Maintenance: Codable {

@@ -1,15 +1,20 @@
-//
-//  PropertyInput.swift
-//  HouseRentClient
-//
-//  Created by Sayan  Maity  on 13/12/25.
-//
-
 import Foundation
 
 struct MaintenanceInput: Encodable {
     let amount: Int
     let included: Bool
+}
+
+struct GeoInput: Encodable {
+    let lat: Double
+    let lng: Double
+}
+
+struct LocationInput: Encodable {
+    let city: String
+    let area: String
+    let pincode: String
+    let geo: GeoInput?
 }
 
 struct PropertyInput: Encodable {
@@ -23,7 +28,7 @@ struct PropertyInput: Encodable {
     let maintenance: MaintenanceInput?
     let builtUpArea: Int
     let availableFrom: String
-    let location: Location
+    let location: LocationInput
     let amenities: [String]
     let images: [String]
     let allowedTenants: String

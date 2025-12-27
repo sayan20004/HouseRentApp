@@ -1,4 +1,3 @@
-
 import Foundation
 
 enum NetworkError: Error, LocalizedError {
@@ -23,8 +22,7 @@ class NetworkManager {
     private init() {}
     
     func request<T: Codable>(endpoint: String, method: String = "GET", body: Data? = nil, queryItems: [URLQueryItem]? = nil) async throws -> T {
-        // Ensure this matches your Render URL exactly
-        guard var urlComponents = URLComponents(string: "https://houserentapi.onrender.com/api/v1" + endpoint) else {
+        guard var urlComponents = URLComponents(string: APIConfig.baseURL + endpoint) else {
             throw NetworkError.invalidURL
         }
         
@@ -46,17 +44,11 @@ class NetworkManager {
             request.httpBody = body
         }
         
-        // Debug Print: Show what we are requesting
-        print("🌐 Request: \(method) \(url.absoluteString)")
-        
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknown
         }
-        
-        // Debug Print: Show status code
-        print("📡 Response Status: \(httpResponse.statusCode)")
         
         if httpResponse.statusCode == 401 {
             TokenManager.shared.clear()
@@ -65,7 +57,6 @@ class NetworkManager {
         
         if !(200...299).contains(httpResponse.statusCode) {
             if let errorResponse = try? JSONDecoder().decode(APIResponse<EmptyData>.self, from: data) {
-                print("❌ Server Error: \(errorResponse.message ?? "Unknown")")
                 throw NetworkError.serverError(errorResponse.message ?? "Server error")
             }
             throw NetworkError.serverError("Error code: \(httpResponse.statusCode)")
@@ -74,12 +65,60 @@ class NetworkManager {
         do {
             return try JSONDecoder().decode(T.self, from: data)
         } catch {
-            // CRITICAL DEBUGGING: Print why decoding failed
-            print("❌ Decoding Error for \(T.self): \(error)")
-            if let responseString = String(data: data, encoding: .utf8) {
-                print("📦 Raw Response: \(responseString)")
-            }
             throw NetworkError.decodingError
         }
+    }
+    
+    func upload<T: Codable>(endpoint: String, method: String = "POST", parameters: [String: Any], images: [Data]) async throws -> T {
+        guard let url = URL(string: APIConfig.baseURL + endpoint) else { throw NetworkError.invalidURL }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        
+        if let token = TokenManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        var body = Data()
+        
+        for (key, value) in parameters {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
+            
+            if let dict = value as? [String: Any] {
+                 let jsonData = try JSONSerialization.data(withJSONObject: dict)
+                 let jsonString = String(data: jsonData, encoding: .utf8)!
+                 body.append("\(jsonString)\r\n".data(using: .utf8)!)
+            } else if let array = value as? [String] {
+                 let jsonData = try JSONSerialization.data(withJSONObject: array)
+                 let jsonString = String(data: jsonData, encoding: .utf8)!
+                 body.append("\(jsonString)\r\n".data(using: .utf8)!)
+            } else {
+                 body.append("\(value)\r\n".data(using: .utf8)!)
+            }
+        }
+        
+        for (index, imageData) in images.enumerated() {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"images\"; filename=\"image\(index).jpg\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+            body.append(imageData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw NetworkError.unknown }
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+             throw NetworkError.serverError("Upload failed: \(httpResponse.statusCode)")
+        }
+        
+        return try JSONDecoder().decode(T.self, from: data)
     }
 }
